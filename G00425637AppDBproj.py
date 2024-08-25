@@ -17,7 +17,6 @@ NEO4J_CONFIG = {
     'password': 'Parachromis2193'
 }
 
-
 # Connect to MySQL - Ensuring we're connected, error if not
 def connect_mysql():
     try:
@@ -27,7 +26,6 @@ def connect_mysql():
     except MySQLError as e:
         print(f"Oops! Failed to connect to MySQL: {e}")
         sys.exit(1)
-
 
 # Same as above, but for neo
 def connect_neo4j():
@@ -41,7 +39,6 @@ def connect_neo4j():
     except Exception as e:
         print(f"Oh no! Couldn't connect to Neo4j: {e}")
         sys.exit(1)
-
 
 # MySQL: See Cities by Country
 def view_cities_by_country():
@@ -72,7 +69,6 @@ def view_cities_by_country():
         cursor.close()
         connection.close()
 
-
 # MySQL: Change City Population - update a city's pop
 def update_city_population():
     city_id = input("City ID, please: ").strip()
@@ -101,7 +97,6 @@ def update_city_population():
     finally:
         cursor.close()
         connection.close()
-
 
 # MySQL: List Countries by Population - see countries based on how many people live there
 def view_countries_by_population():
@@ -136,7 +131,6 @@ def view_countries_by_population():
         cursor.close()
         connection.close()
 
-
 # MySQL: Add New Country and City - add brand new country and its cities
 def add_new_country():
     connection = connect_mysql()
@@ -163,7 +157,6 @@ def add_new_country():
     finally:
         cursor.close()
         connection.close()
-
 
 def add_new_city(country_code):
     connection = connect_mysql()
@@ -192,7 +185,6 @@ def add_new_city(country_code):
     finally:
         cursor.close()
         connection.close()
-
 
 # MySQL: Add New Person - add a person and make sure ther city exists
 def add_new_person():
@@ -226,7 +218,6 @@ def add_new_person():
         cursor.close()
         connection.close()
 
-
 # MySQL: Delete Person - remove a person, but only if they haven't been visiting cities
 def delete_person():
     connection = connect_mysql()
@@ -250,7 +241,6 @@ def delete_person():
         cursor.close()
         connection.close()
 
-
 # Neo4j: Show Twinned Cities - see which cities are twinned with each other
 def show_twinned_cities():
     driver = connect_neo4j()
@@ -261,7 +251,6 @@ def show_twinned_cities():
         for record in result:
             print(f"{record['City1']} <-> {record['City2']}")
     driver.close()
-
 
 # Neo4j: Display Twin Count for Cities - see how many cities each city is twinned with
 def display_twin_counts():
@@ -276,7 +265,6 @@ def display_twin_counts():
         for record in result:
             print(f"{record['City']}: {record['TwinCount']} twins")
     driver.close()
-
 
 def get_city_name_from_mysql(city_id):
     connection = connect_mysql()
@@ -294,7 +282,6 @@ def get_city_name_from_mysql(city_id):
     finally:
         cursor.close()
         connection.close()
-
 
 # Neo4j: Twin with Dublin - make a city twinned with Dublin
 def twin_with_dublin():
@@ -316,6 +303,32 @@ def twin_with_dublin():
         print(f"City '{city_name}' with ID {city_id} twinned with Dublin.")
     driver.close()
 
+# MySQL: Search for Cities by Population Range - filter cities based on population
+def search_cities_by_population_range():
+    min_population = int(input("Enter the minimum population: ").strip())
+    max_population = int(input("Enter the maximum population: ").strip())
+
+    connection = connect_mysql()
+    cursor = connection.cursor()
+    try:
+        query = """
+        SELECT Name, CountryCode, District, Population
+        FROM city
+        WHERE Population BETWEEN %s AND %s
+        ORDER BY Population ASC
+        """
+        cursor.execute(query, (min_population, max_population))
+        cities = cursor.fetchall()
+        if not cities:
+            print(f"No cities found with population between {min_population} and {max_population}.")
+            return
+        for i, city in enumerate(cities, start=1):
+            print(f"{i}. City: {city[0]}, Country: {city[1]}, District: {city[2]}, Population: {city[3]}")
+    except MySQLError as e:
+        print(f"Error retrieving cities by population range: {e}")
+    finally:
+        cursor.close()
+        connection.close()
 
 # Main Menu nav
 def main():
@@ -329,6 +342,7 @@ def main():
         print("7. Show Twinned Cities (Neo4j)")
         print("8. Twin with Dublin (Neo4j)")
         print("9. Display City Twin Counts (Neo4j)")
+        print("10. Search Cities by Population Range (MySQL)")
         print("x. Exit Application")
         choice = input("Choose an option: ").strip()
         if choice == '1':
@@ -349,12 +363,13 @@ def main():
             twin_with_dublin()
         elif choice == '9':
             display_twin_counts()
+        elif choice == '10':
+            search_cities_by_population_range()
         elif choice.lower() == 'x':
             print("Exiting application...")
             break
         else:
             print("Invalid option, please try again.")
-
 
 if __name__ == "__main__":
     main()
